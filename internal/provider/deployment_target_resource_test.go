@@ -1,0 +1,44 @@
+package provider
+
+import (
+	"fmt"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"testing"
+)
+
+func TestAccDeploymentTargetResource(t *testing.T) {
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		Steps: []resource.TestStep{
+			// Create and Read DeploymentTarget Resource
+			{
+				Config: testAccDeploymentTargetResourceConfig("test", "default"),
+				Check: resource.ComposeTestCheckFunc(resource.TestCheckResourceAttr("am_deployment_target.test", "name", "test"),
+					resource.ComposeTestCheckFunc(resource.TestCheckResourceAttr("am_deployment_target.test", "namespace", "default")),
+				),
+			},
+			// Delete testing automatically occurs in TestCase
+		},
+	})
+}
+
+func testAccDeploymentTargetResourceConfig(name string, ns string) string {
+	return fmt.Sprintf(`
+resource "am_namespace" "test" {
+ provider = appmanager
+
+ name =  "test"
+}
+
+resource "am_deployment_target" "test" {
+provider = appmanager
+depends_on = [
+ am_namespace.test
+]
+
+name = %[1]q
+namespace = %[2]q
+}
+`, name, ns)
+}
