@@ -15,8 +15,8 @@ func TestAccNamespaceResource(t *testing.T) {
 			{
 				Config: testAccNamespaceResourceConfig("test"),
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr("am_namespace.test", "name", "test"),
-					resource.TestCheckResourceAttr("am_namespace.test", "state", "ACTIVE"),
+					resource.TestCheckResourceAttr("flink_appmanager_namespace.test", "name", "test"),
+					resource.TestCheckResourceAttr("flink_appmanager_namespace.test", "state", "ACTIVE"),
 				),
 			},
 			// Delete testing automatically occurs in TestCase
@@ -26,8 +26,8 @@ func TestAccNamespaceResource(t *testing.T) {
 
 func testAccNamespaceResourceConfig(name string) string {
 	return fmt.Sprintf(`
-resource "am_namespace" "test" {
- provider = appmanager
+resource "flink_appmanager_namespace" "test" {
+ provider = flink-appmanager
  name =  %[1]q
 }
 `, name)

@@ -14,9 +14,9 @@ func TestAccSessionClusterResource(t *testing.T) {
 			// Create and Read SessionCluster Resource
 			{
 				Config: testAccSessionClusterResourceConfig("test", "test"),
-				Check: resource.ComposeTestCheckFunc(resource.TestCheckResourceAttr("am_session_cluster.test", "name", "test"),
-					resource.ComposeTestCheckFunc(resource.TestCheckResourceAttr("am_session_cluster.test", "deployment_target_name", "test")),
-					resource.ComposeTestCheckFunc(resource.TestCheckResourceAttr("am_session_cluster.test", "state", "RUNNING")),
+				Check: resource.ComposeTestCheckFunc(resource.TestCheckResourceAttr("flink_appmanager_session_cluster.test", "name", "test"),
+					resource.ComposeTestCheckFunc(resource.TestCheckResourceAttr("flink_appmanager_session_cluster.test", "deployment_target_name", "test")),
+					resource.ComposeTestCheckFunc(resource.TestCheckResourceAttr("flink_appmanager_session_cluster.test", "state", "RUNNING")),
 				),
 			},
 		},
@@ -25,26 +25,26 @@ func TestAccSessionClusterResource(t *testing.T) {
 
 func testAccSessionClusterResourceConfig(name string, deploymentTargetName string) string {
 	return fmt.Sprintf(`
-resource "am_namespace" "test" {
-  provider = appmanager
+resource "flink_appmanager_namespace" "test" {
+  provider = flink-appmanager
 
   name =  "test"
 }
 
-resource "am_deployment_target" "test" {
- provider = appmanager
+resource "flink_appmanager_deployment_target" "test" {
+ provider = flink-appmanager
  depends_on = [
-  am_namespace.test
+  flink_appmanager_namespace.test
  ]
 
  name = %[2]q
  namespace = "default"
 }
 
-resource "am_session_cluster" "test" {
-  provider = appmanager
+resource "flink_appmanager_session_cluster" "test" {
+  provider = flink-appmanager
   depends_on = [
-    am_deployment_target.test
+    flink_appmanager_deployment_target.test
   ]
 
   name = %[1]q

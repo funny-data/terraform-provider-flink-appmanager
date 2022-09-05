@@ -14,8 +14,8 @@ func TestAccDeploymentTargetResource(t *testing.T) {
 			// Create and Read DeploymentTarget Resource
 			{
 				Config: testAccDeploymentTargetResourceConfig("test", "default"),
-				Check: resource.ComposeTestCheckFunc(resource.TestCheckResourceAttr("am_deployment_target.test", "name", "test"),
-					resource.ComposeTestCheckFunc(resource.TestCheckResourceAttr("am_deployment_target.test", "namespace", "default")),
+				Check: resource.ComposeTestCheckFunc(resource.TestCheckResourceAttr("flink_appmanager_deployment_target.test", "name", "test"),
+					resource.ComposeTestCheckFunc(resource.TestCheckResourceAttr("flink_appmanager_deployment_target.test", "namespace", "default")),
 				),
 			},
 			// Delete testing automatically occurs in TestCase
@@ -25,16 +25,16 @@ func TestAccDeploymentTargetResource(t *testing.T) {
 
 func testAccDeploymentTargetResourceConfig(name string, ns string) string {
 	return fmt.Sprintf(`
-resource "am_namespace" "test" {
- provider = appmanager
+resource "flink_appmanager_namespace" "test" {
+ provider = flink-appmanager
 
  name =  "test"
 }
 
-resource "am_deployment_target" "test" {
+resource "flink_appmanager_deployment_target" "test" {
 provider = appmanager
 depends_on = [
- am_namespace.test
+ flink_appmanager_namespace.test
 ]
 
 name = %[1]q

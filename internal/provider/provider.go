@@ -78,7 +78,7 @@ func (p *appManagerProvider) Configure(ctx context.Context, req provider.Configu
 	}
 
 	if config.Endpoint.Null {
-		endpoint = os.Getenv("FLINKAPPMANAGER_ENDPOINT")
+		endpoint = os.Getenv("FLINK_APPMANAGER_ENDPOINT")
 	} else {
 		endpoint = config.Endpoint.Value
 	}
@@ -96,7 +96,7 @@ func (p *appManagerProvider) Configure(ctx context.Context, req provider.Configu
 	}
 
 	if config.Namespace.Null {
-		namespace = os.Getenv("FLINKAPPMANAGER_NAMESPACE")
+		namespace = os.Getenv("FLINK_APPMANAGER_NAMESPACE")
 	} else {
 		namespace = config.Namespace.Value
 	}
@@ -127,9 +127,9 @@ func (p *appManagerProvider) Configure(ctx context.Context, req provider.Configu
 
 func (p *appManagerProvider) GetResources(_ context.Context) (map[string]provider.ResourceType, diag.Diagnostics) {
 	return map[string]provider.ResourceType{
-		"am_namespace":         namespaceResourceType{},
-		"am_deployment_target": deploymentTargetResourceType{},
-		"am_session_cluster":   sessionClusterResourceType{},
+		"flink_appmanager_namespace":         namespaceResourceType{},
+		"flink_appmanager_deployment_target": deploymentTargetResourceType{},
+		"flink_appmanager_session_cluster":   sessionClusterResourceType{},
 	}, nil
 }
 

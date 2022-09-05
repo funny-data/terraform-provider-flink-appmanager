@@ -1,36 +1,36 @@
 terraform {
   required_providers {
-    appmanager = {
-      source = "xmfunny.com/funnydb/appmanager"
+    flink-appmanager = {
+      source = "registry.terraform.io/funny-data/flink-appmanager"
     }
   }
 }
 
-provider "appmanager" {
+provider "flink-appmanager" {
   endpoint      = "http://flink-appmanager"
   namespace = "test"
   wait_timeout = 180
 }
 
-resource "am_namespace" "test" {
-  provider = appmanager
+resource "flink_appmanager_namespace" "test" {
+  provider = flink-appmanager
   name = "test"
 }
 
-resource "am_deployment_target" "test" {
-  provider = appmanager
+resource "flink_appmanager_deployment_target" "test" {
+  provider = flink-appmanager
   depends_on = [
-    am_namespace.test
+    flink_appmanager_namespace.test
   ]
 
   name = "test"
   namespace = "default"
 }
 
-resource "am_session_cluster" "test" {
-  provider = appmanager
+resource "flink_appmanager_session_cluster" "test" {
+  provider = flink-appmanager
   depends_on = [
-    am_deployment_target.test
+    flink_appmanager_deployment_target.test
   ]
 
   name = "test"
