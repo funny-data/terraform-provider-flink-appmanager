@@ -3,7 +3,7 @@ module terraform-provider-flink-appmanager
 go 1.18
 
 require (
-	git.sofunny.io/data-analysis/flink-app/anti-cheat-panel v0.0.0-20220902094325-75652382c681
+	git.sofunny.io/data-analysis/flink-app/anti-cheat-panel v0.0.0-20220908061817-86857f183fe8
 	github.com/hashicorp/terraform-plugin-docs v0.13.0
 	github.com/hashicorp/terraform-plugin-framework v0.11.1
 	github.com/hashicorp/terraform-plugin-go v0.14.0

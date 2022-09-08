@@ -31,6 +31,10 @@ func (r sessionClusterResourceType) GetSchema(_ context.Context) (tfsdk.Schema, 
 				Type:     types.StringType,
 				Computed: true,
 			},
+			"namespace": {
+				Type:     types.StringType,
+				Required: true,
+			},
 			"name": {
 				Type:     types.StringType,
 				Required: true,
@@ -96,7 +100,7 @@ func (r sessionClusterResource) Create(ctx context.Context, req resource.CreateR
 	}
 
 	// 创建SessionCluster集群
-	sc, err := r.RunSessionCluster(buildSessionClusterDTO(&plan))
+	sc, err := r.RunSessionCluster(plan.Namespace.Value, buildSessionClusterDTO(&plan))
 	if err != nil {
 		resp.Diagnostics.AddError("Error create sessionCluster", "could not create sessionCluster, unexpected error: "+err.Error())
 	}
@@ -122,7 +126,7 @@ func (r sessionClusterResource) Read(ctx context.Context, req resource.ReadReque
 	}
 
 	// 查询SessionCluster集群信息
-	sessionCluster, _, err := r.provider.client.GetSessionCluster(state.Name.Value)
+	sessionCluster, _, err := r.provider.client.GetSessionCluster(state.Name.Value, state.Namespace.Value)
 	if err != nil {
 		resp.Diagnostics.AddError("Error reading sessionCluster", "Could not read sessionCluster, unexpected error:: "+err.Error())
 		return
@@ -150,7 +154,7 @@ func (r sessionClusterResource) Update(ctx context.Context, req resource.UpdateR
 	}
 
 	name := state.Name.Value
-	_, err := r.StopSessionCluster(name)
+	_, err := r.StopSessionCluster(name, state.Namespace.Value)
 	if err != nil {
 		resp.Diagnostics.AddError("Error stop sessionCluster", "Could stop sessionCluster, unexpected error: "+err.Error())
 		return
@@ -165,7 +169,7 @@ func (r sessionClusterResource) Update(ctx context.Context, req resource.UpdateR
 	}
 
 	// 创建SessionCluster集群
-	sc, err := r.RunSessionCluster(buildSessionClusterDTO(&plan))
+	sc, err := r.RunSessionCluster(plan.Namespace.Value, buildSessionClusterDTO(&plan))
 	if err != nil {
 		resp.Diagnostics.AddError("Error create sessionCluster", "could not create sessionCluster, unexpected error: "+err.Error())
 	}
@@ -192,14 +196,15 @@ func (r sessionClusterResource) Delete(ctx context.Context, req resource.DeleteR
 
 	sessionClusterName := state.Name.Value
 	// 停止SessionCluster
-	_, err := r.StopSessionCluster(sessionClusterName)
+	_, err := r.StopSessionCluster(state.Namespace.Value, sessionClusterName)
 	if err != nil {
 		resp.Diagnostics.AddError("Error stop sessionCluster", "Could not stop sessionCluster, unexpected error: "+err.Error())
 		return
 	}
 
 	// 删除集群名称
-	_, _, err = r.provider.client.DeleteSessionCluster(sessionClusterName)
+	_, _, err = r.provider.client.DeleteSessionCluster(sessionClusterName, state.Namespace.Value)
+
 	if err != nil {
 		resp.Diagnostics.AddError("Error delete sessionCluster", "Could not delete sessionCluster, unexpected error: "+err.Error())
 		return
@@ -223,6 +228,7 @@ func buildSessionClusterTfValue(sc *client.SessionCluster) *SessionCluster {
 
 	return &SessionCluster{
 		ID:                   types.String{Value: sc.Metadata.Id},
+		Namespace:            types.String{Value: sc.Metadata.Namespace},
 		Name:                 types.String{Value: sc.Metadata.Name},
 		State:                types.String{Value: sc.Status.State},
 		DeploymentTargetName: types.String{Value: sc.Spec.DeploymentTargetName},
@@ -246,7 +252,7 @@ func buildSessionClusterDTO(sc *SessionCluster) *client.SessionCluster {
 	}
 
 	return &client.SessionCluster{
-		Metadata: &client.SessionClusterMetadata{Name: sc.Name.Value},
+		Metadata: &client.SessionClusterMetadata{Name: sc.Name.Value, Namespace: sc.Namespace.Value},
 		Spec: &client.SessionClusterSpec{
 			State:                sc.State.Value,
 			DeploymentTargetName: sc.DeploymentTargetName.Value,
@@ -260,19 +266,19 @@ func buildSessionClusterDTO(sc *SessionCluster) *client.SessionCluster {
 }
 
 // StopSessionCluster 停止SessionCluster
-func (r sessionClusterResource) StopSessionCluster(sessionClusterName string) (*client.SessionCluster, error) {
+func (r sessionClusterResource) StopSessionCluster(namespace string, sessionClusterName string) (*client.SessionCluster, error) {
 	// 停止SessionCluster
 	sc := &client.SessionCluster{
-		Metadata: &client.SessionClusterMetadata{Name: sessionClusterName},
+		Metadata: &client.SessionClusterMetadata{Name: sessionClusterName, Namespace: namespace},
 		Spec:     &client.SessionClusterSpec{State: client.ClusterStopped},
 	}
-	_, _, err := r.provider.client.UpdateSessionCluster(sc)
+	_, _, err := r.provider.client.UpdateSessionCluster(sc, namespace)
 	if err != nil {
 		return nil, err
 	}
 
 	// 等待SessionCluster停止
-	sc, _, err = r.provider.client.WaitSessionClusterStateChange(sessionClusterName, client.ClusterStopped)
+	sc, _, err = r.provider.client.WaitSessionClusterStateChange(sessionClusterName, client.ClusterStopped, namespace)
 	if err != nil {
 		return nil, err
 	}
@@ -281,19 +287,19 @@ func (r sessionClusterResource) StopSessionCluster(sessionClusterName string) (*
 }
 
 // RunSessionCluster 创建出运行的SessionCluster
-func (r sessionClusterResource) RunSessionCluster(scCfg *client.SessionCluster) (*client.SessionCluster, error) {
+func (r sessionClusterResource) RunSessionCluster(namespace string, scCfg *client.SessionCluster) (*client.SessionCluster, error) {
 	// 写死使用默认日志配置
 	scCfg.Spec.Logging = &client.Logging{Log4jLoggers: map[string]string{"": "INFO"}, LoggingProfile: "default"}
 	// 强制启动
 	scCfg.Spec.State = client.ClusterRunning
 
-	_, _, err := r.provider.client.CreateOrReplaceSessionCluster(scCfg)
+	_, _, err := r.provider.client.CreateOrReplaceSessionCluster(scCfg, namespace)
 	if err != nil {
 		return nil, err
 	}
 
 	// 等待集群创建
-	state, _, err := r.provider.client.WaitSessionClusterStateChange(scCfg.Metadata.Name, client.ClusterRunning)
+	state, _, err := r.provider.client.WaitSessionClusterStateChange(scCfg.Metadata.Name, client.ClusterRunning, namespace)
 	if err != nil {
 		return nil, err
 	}

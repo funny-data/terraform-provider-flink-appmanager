@@ -13,8 +13,6 @@ import (
 )
 
 const (
-	FlinkApiVersion     = "v1"
-	DefaultNamespace    = "default"
 	DefaultWaitInterval = 3
 	DefaultWaitTimeout  = 180
 )
@@ -39,10 +37,6 @@ func (p *appManagerProvider) GetSchema(_ context.Context) (tfsdk.Schema, diag.Di
 				Type:     types.StringType,
 				Optional: true,
 			},
-			"namespace": {
-				Type:     types.StringType,
-				Optional: true,
-			},
 			"wait_timeout": {
 				Type:     types.Int64Type,
 				Optional: true,
@@ -57,7 +51,6 @@ func (p *appManagerProvider) GetSchema(_ context.Context) (tfsdk.Schema, diag.Di
 
 type providerData struct {
 	Endpoint     types.String `tfsdk:"endpoint"`
-	Namespace    types.String `tfsdk:"namespace"`
 	WaitTimeout  types.Int64  `tfsdk:"wait_timeout"`
 	WaitInterval types.Int64  `tfsdk:"wait_interval"`
 }
@@ -88,23 +81,6 @@ func (p *appManagerProvider) Configure(ctx context.Context, req provider.Configu
 		return
 	}
 
-	var namespace string
-
-	if config.Namespace.Unknown {
-		resp.Diagnostics.AddError("Unable to create client", "Cannot use unknown value as namespace")
-		return
-	}
-
-	if config.Namespace.Null {
-		namespace = os.Getenv("FLINK_APPMANAGER_NAMESPACE")
-	} else {
-		namespace = config.Namespace.Value
-	}
-
-	if namespace == "" {
-		namespace = DefaultNamespace
-	}
-
 	waitInterval := config.WaitInterval.Value
 	if waitInterval == 0 {
 		waitInterval = DefaultWaitInterval
@@ -116,11 +92,9 @@ func (p *appManagerProvider) Configure(ctx context.Context, req provider.Configu
 	}
 
 	p.client = client.SetUp(client.Config{
-		Endpoint:  endpoint,
-		Version:   FlinkApiVersion,
-		Namespace: namespace,
-		Interval:  time.Duration(waitInterval) * time.Second,
-		Timeout:   time.Duration(waitTimeout) * time.Second,
+		Endpoint: endpoint,
+		Interval: time.Duration(waitInterval) * time.Second,
+		Timeout:  time.Duration(waitTimeout) * time.Second,
 	})
 	p.configured = true
 }

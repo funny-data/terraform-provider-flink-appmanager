@@ -1,7 +1,7 @@
 cloud.google.com/go v0.26.0/go.mod h1:aQUYkXzVsufM+DwF1aE+0xfcU+56JwCaLick0ClmMTw=
 cloud.google.com/go v0.34.0/go.mod h1:aQUYkXzVsufM+DwF1aE+0xfcU+56JwCaLick0ClmMTw=
-git.sofunny.io/data-analysis/flink-app/anti-cheat-panel v0.0.0-20220902094325-75652382c681 h1:kURZYIqoPjYZhCmBSXmTZ8PhOj8PrVCMqfFsClGMjm4=
-git.sofunny.io/data-analysis/flink-app/anti-cheat-panel v0.0.0-20220902094325-75652382c681/go.mod h1:cgy9jV5kL+ZoN8dasKGWn/ww4G1qMaPecgpzMqasEm4=
+git.sofunny.io/data-analysis/flink-app/anti-cheat-panel v0.0.0-20220908061817-86857f183fe8 h1:U8psJCoZg3eLmE4M1C4KjI8c0/Xv1ylFuVDrCFYRcMg=
+git.sofunny.io/data-analysis/flink-app/anti-cheat-panel v0.0.0-20220908061817-86857f183fe8/go.mod h1:cgy9jV5kL+ZoN8dasKGWn/ww4G1qMaPecgpzMqasEm4=
 github.com/Alluxio/alluxio-go v0.0.0-20171206193928-d8c9fa5f6920/go.mod h1:W/Su9eEx+vHWpMmVBQYkTKGQlKUwuc5/aEC8KDepI1s=
 github.com/BurntSushi/toml v0.3.1/go.mod h1:xHWCNGjB5oqiDr8zfno3MHue2Ht5sIBksp03qcyfWMU=
 github.com/Knetic/govaluate v3.0.1-0.20171022003610-9aa49832a739+incompatible/go.mod h1:r7JcOSlj0wfOMncg0iLm8Leh48TZaKVeNIfJntJ2wa0=

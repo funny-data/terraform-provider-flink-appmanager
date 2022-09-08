@@ -25,13 +25,17 @@ func (r deploymentTargetResourceType) GetSchema(_ context.Context) (tfsdk.Schema
 				Type:     types.StringType,
 				Computed: true,
 			},
+			"namespace": {
+				Type:     types.StringType,
+				Required: true,
+			},
 			"name": {
 				Type:     types.StringType,
 				Required: true,
 			},
-			"namespace": {
+			"k8s_namespace": {
 				Type:     types.StringType,
-				Optional: true,
+				Required: true,
 			},
 		},
 	}, nil
@@ -68,21 +72,22 @@ func (r deploymentTargetResource) Create(ctx context.Context, req resource.Creat
 
 	// 创建部署目标
 	dt := &client.DeploymentTarget{
-		Metadata: &client.DeploymentTargetMetadata{Name: plan.Name.Value},
+		Metadata: &client.DeploymentTargetMetadata{Name: plan.Name.Value, Namespace: plan.Namespace.Value},
 		Spec: &client.DeploymentTargetSpec{Kubernetes: &client.KubernetesTarget{
-			Namespace: plan.Namespace.Value,
+			Namespace: plan.K8SNamespace.Value,
 		}},
 	}
-	deploymentTarget, _, err := r.provider.client.CreateDeploymentTarget(dt)
+	deploymentTarget, _, err := r.provider.client.CreateDeploymentTarget(dt, plan.Namespace.Value)
 	if err != nil {
 		resp.Diagnostics.AddError("Error create deploymentTarget", "Could not create deploymentTarget, unexpected error: "+err.Error())
 		return
 	}
 
 	var result = DeploymentTarget{
-		ID:        types.String{Value: deploymentTarget.Metadata.ID},
-		Name:      types.String{Value: deploymentTarget.Metadata.Name},
-		Namespace: types.String{Value: deploymentTarget.Spec.Kubernetes.Namespace},
+		ID:           types.String{Value: deploymentTarget.Metadata.ID},
+		Namespace:    types.String{Value: deploymentTarget.Metadata.Namespace},
+		Name:         types.String{Value: deploymentTarget.Metadata.Name},
+		K8SNamespace: types.String{Value: deploymentTarget.Spec.Kubernetes.Namespace},
 	}
 
 	// 保存状态
@@ -103,16 +108,17 @@ func (r deploymentTargetResource) Read(ctx context.Context, req resource.ReadReq
 		return
 	}
 
-	deploymentTarget, _, err := r.provider.client.GetDeploymentTarget(state.Name.Value)
+	deploymentTarget, _, err := r.provider.client.GetDeploymentTarget(state.Name.Value, state.Namespace.Value)
 	if err != nil {
 		resp.Diagnostics.AddError("Error reading deploymentTarget", "Could not read deploymentTarget: "+err.Error())
 		return
 	}
 
 	var result = DeploymentTarget{
-		ID:        types.String{Value: deploymentTarget.Metadata.ID},
-		Name:      types.String{Value: deploymentTarget.Metadata.Name},
-		Namespace: types.String{Value: deploymentTarget.Spec.Kubernetes.Namespace},
+		ID:           types.String{Value: deploymentTarget.Metadata.ID},
+		Name:         types.String{Value: deploymentTarget.Metadata.Name},
+		Namespace:    types.String{Value: deploymentTarget.Metadata.Namespace},
+		K8SNamespace: types.String{Value: deploymentTarget.Spec.Kubernetes.Namespace},
 	}
 
 	// 部署目标写入状态
@@ -138,7 +144,7 @@ func (r deploymentTargetResource) Delete(ctx context.Context, req resource.Delet
 	}
 
 	// 删除部署目标
-	_, _, err := r.provider.client.DeleteDeploymentTarget(state.Name.Value)
+	_, _, err := r.provider.client.DeleteDeploymentTarget(state.Name.Value, state.Namespace.Value)
 	if err != nil {
 		resp.Diagnostics.AddError("Error delete deploymentTarget", "Could not deleted deploymentTarget, unexpected error: "+err.Error())
 		return

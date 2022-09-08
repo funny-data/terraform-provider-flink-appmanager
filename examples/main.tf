@@ -8,7 +8,6 @@ terraform {
 
 provider "flink-appmanager" {
   endpoint      = "http://flink-appmanager"
-  namespace = "test"
   wait_timeout = 180
 }
 
@@ -24,7 +23,8 @@ resource "flink_appmanager_deployment_target" "test" {
   ]
 
   name = "test"
-  namespace = "default"
+  namespace = "test"
+  k8s_namespace = "default"
 }
 
 resource "flink_appmanager_session_cluster" "test" {
@@ -34,8 +34,9 @@ resource "flink_appmanager_session_cluster" "test" {
   ]
 
   name = "test"
+  namespace = "test"
   deployment_target_name = "test"
-  flink_version = "1.14.4"
+  flink_version = "1.14"
   flink_image_tag = "1.14.4-scala_2.12-java11-1"
   number_of_task_managers = 1
   flink_configuration = {

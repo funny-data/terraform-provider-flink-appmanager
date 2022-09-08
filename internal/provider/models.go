@@ -5,6 +5,7 @@ import "github.com/hashicorp/terraform-plugin-framework/types"
 // SessionCluster SessionCluster Model
 type SessionCluster struct {
 	ID                   types.String             `tfsdk:"id"`
+	Namespace            types.String             `tfsdk:"namespace"`
 	Name                 types.String             `tfsdk:"name"`
 	State                types.String             `tfsdk:"state"`
 	DeploymentTargetName types.String             `tfsdk:"deployment_target_name"`
@@ -23,9 +24,10 @@ type ResourceSpec struct {
 
 // DeploymentTarget 部署目标Model
 type DeploymentTarget struct {
-	ID        types.String `tfsdk:"id"`
-	Name      types.String `tfsdk:"name"`
-	Namespace types.String `tfsdk:"namespace"`
+	ID           types.String `tfsdk:"id"`
+	Namespace    types.String `tfsdk:"namespace"`
+	Name         types.String `tfsdk:"name"`
+	K8SNamespace types.String `tfsdk:"k8s_namespace"`
 }
 
 // Namespace 部署空间Model
