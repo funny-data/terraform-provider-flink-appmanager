@@ -35,7 +35,6 @@ go install
 
 FlinkAppManager Provider参数配置说明
 - `host`: FlinkAppManager主机地址,参数示例: `http://flink-appmanager`
-- `namespace`: 所要使用的部署空间,后续创建的资源均在该部署空间内,参数示例: `test`
 - `wait_timeout`: 资源操作超时时间,默认180秒,参数示例: `180`
 - `wait_interval`: 资源操作检查间隔,默认3秒,参数示例: `3`
 
@@ -65,7 +64,6 @@ terraform import flink_appmanager_session_cluster.test test
 这里需要将端点指定为测试平台
 ```shell
 export FLINK_APPMANAGER_ENDPOINT=http://flink-appmanager
-export FLINK_APPMANAGER_NAMESPACE=test
 
 make testacc
 ```

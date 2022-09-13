@@ -2,7 +2,7 @@ package provider
 
 import (
 	"context"
-	"git.sofunny.io/data-analysis/flink-app/anti-cheat-panel/pkg/client"
+	"git.sofunny.io/data-analysis-public/flink-appmanager-sdk/go/pkg/client"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
@@ -42,10 +42,6 @@ func (r sessionClusterResourceType) GetSchema(_ context.Context) (tfsdk.Schema, 
 			"deployment_target_name": {
 				Type:     types.StringType,
 				Optional: true,
-			},
-			"flink_version": {
-				Type:     types.StringType,
-				Required: true,
 			},
 			"flink_image_tag": {
 				Type:     types.StringType,
@@ -232,7 +228,6 @@ func buildSessionClusterTfValue(sc *client.SessionCluster) *SessionCluster {
 		Name:                 types.String{Value: sc.Metadata.Name},
 		State:                types.String{Value: sc.Status.State},
 		DeploymentTargetName: types.String{Value: sc.Spec.DeploymentTargetName},
-		FlinkVersion:         types.String{Value: sc.Spec.FlinkVersion},
 		FlinkImageTag:        types.String{Value: sc.Spec.FlinkImageTag},
 		NumberOfTaskManagers: types.Int64{Value: int64(sc.Spec.NumberOfTaskManagers)},
 		Resources:            resources,
@@ -256,7 +251,6 @@ func buildSessionClusterDTO(sc *SessionCluster) *client.SessionCluster {
 		Spec: &client.SessionClusterSpec{
 			State:                sc.State.Value,
 			DeploymentTargetName: sc.DeploymentTargetName.Value,
-			FlinkVersion:         sc.FlinkVersion.Value,
 			FlinkImageTag:        sc.FlinkImageTag.Value,
 			NumberOfTaskManagers: int(sc.NumberOfTaskManagers.Value),
 			FlinkConfiguration:   sc.FlinkConfiguration,

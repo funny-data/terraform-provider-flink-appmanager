@@ -9,7 +9,6 @@ type SessionCluster struct {
 	Name                 types.String             `tfsdk:"name"`
 	State                types.String             `tfsdk:"state"`
 	DeploymentTargetName types.String             `tfsdk:"deployment_target_name"`
-	FlinkVersion         types.String             `tfsdk:"flink_version"`
 	FlinkImageTag        types.String             `tfsdk:"flink_image_tag"`
 	NumberOfTaskManagers types.Int64              `tfsdk:"number_of_task_managers"`
 	Resources            map[string]*ResourceSpec `tfsdk:"resources"`

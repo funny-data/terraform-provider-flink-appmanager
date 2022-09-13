@@ -3,7 +3,7 @@ package provider
 import (
 	"context"
 	"fmt"
-	"git.sofunny.io/data-analysis/flink-app/anti-cheat-panel/pkg/client"
+	"git.sofunny.io/data-analysis-public/flink-appmanager-sdk/go/pkg/client"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/provider"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"

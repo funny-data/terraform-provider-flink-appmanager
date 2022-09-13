@@ -3,7 +3,7 @@ module terraform-provider-flink-appmanager
 go 1.18
 
 require (
-	git.sofunny.io/data-analysis/flink-app/anti-cheat-panel v0.0.0-20220908061817-86857f183fe8
+	git.sofunny.io/data-analysis-public/flink-appmanager-sdk/go v0.0.0-20220913075641-5a263160370c
 	github.com/hashicorp/terraform-plugin-docs v0.13.0
 	github.com/hashicorp/terraform-plugin-framework v0.11.1
 	github.com/hashicorp/terraform-plugin-go v0.14.0
@@ -18,6 +18,8 @@ require (
 	github.com/apparentlymart/go-textseg/v13 v13.0.0 // indirect
 	github.com/armon/go-radix v1.0.0 // indirect
 	github.com/bgentry/speakeasy v0.1.0 // indirect
+	github.com/bhmj/jsonslice v1.1.2 // indirect
+	github.com/bhmj/xpression v0.9.1 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/fatih/color v1.13.0 // indirect
 	github.com/golang/protobuf v1.5.2 // indirect

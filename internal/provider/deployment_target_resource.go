@@ -2,7 +2,7 @@ package provider
 
 import (
 	"context"
-	"git.sofunny.io/data-analysis/flink-app/anti-cheat-panel/pkg/client"
+	"git.sofunny.io/data-analysis-public/flink-appmanager-sdk/go/pkg/client"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/provider"
@@ -14,6 +14,10 @@ import (
 var _ provider.ResourceType = deploymentTargetResourceType{}
 var _ resource.Resource = deploymentTargetResource{}
 var _ resource.ResourceWithImportState = deploymentTargetResource{}
+
+const (
+	DefaultK8SNamespace = "default"
+)
 
 type deploymentTargetResourceType struct {
 }
@@ -35,7 +39,11 @@ func (r deploymentTargetResourceType) GetSchema(_ context.Context) (tfsdk.Schema
 			},
 			"k8s_namespace": {
 				Type:     types.StringType,
-				Required: true,
+				Optional: true,
+				Computed: true,
+				PlanModifiers: tfsdk.AttributePlanModifiers{
+					resource.UseStateForUnknown(),
+				},
 			},
 		},
 	}, nil
@@ -70,11 +78,16 @@ func (r deploymentTargetResource) Create(ctx context.Context, req resource.Creat
 		return
 	}
 
+	k8sNamespace := plan.K8SNamespace.Value
+	if k8sNamespace == "" {
+		k8sNamespace = DefaultK8SNamespace
+	}
+
 	// 创建部署目标
 	dt := &client.DeploymentTarget{
 		Metadata: &client.DeploymentTargetMetadata{Name: plan.Name.Value, Namespace: plan.Namespace.Value},
 		Spec: &client.DeploymentTargetSpec{Kubernetes: &client.KubernetesTarget{
-			Namespace: plan.K8SNamespace.Value,
+			Namespace: k8sNamespace,
 		}},
 	}
 	deploymentTarget, _, err := r.provider.client.CreateDeploymentTarget(dt, plan.Namespace.Value)

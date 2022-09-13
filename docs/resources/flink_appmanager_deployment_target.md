@@ -15,7 +15,7 @@ DeploymentTarget resource
 ```terraform
 resource "flink_appmanager_deployment_target" "test" {
   name = "test"
-  namespace = "default"
+  namespace = "test"
 }
 ```
 
