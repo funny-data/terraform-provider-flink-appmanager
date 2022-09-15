@@ -11,7 +11,7 @@ func TestAccSessionClusterResource(t *testing.T) {
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
-			// Create and Read SessionCluster Resource
+			// Create and Read SessionClusterResourceModel Resource
 			{
 				Config: testAccSessionClusterResourceConfig("test", "test"),
 				Check: resource.ComposeTestCheckFunc(resource.TestCheckResourceAttr("flink_appmanager_session_cluster.test", "name", "test"),
@@ -26,13 +26,13 @@ func TestAccSessionClusterResource(t *testing.T) {
 func testAccSessionClusterResourceConfig(name string, deploymentTargetName string) string {
 	return fmt.Sprintf(`
 resource "flink_appmanager_namespace" "test" {
-  provider = flink-appmanager
+  provider = fam
 
   name =  "test"
 }
 
 resource "flink_appmanager_deployment_target" "test" {
- provider = flink-appmanager
+ provider = fam
  depends_on = [
   flink_appmanager_namespace.test
  ]
@@ -43,7 +43,7 @@ resource "flink_appmanager_deployment_target" "test" {
 }
 
 resource "flink_appmanager_session_cluster" "test" {
-  provider = flink-appmanager
+  provider = fam
   depends_on = [
     flink_appmanager_deployment_target.test
   ]

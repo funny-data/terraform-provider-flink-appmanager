@@ -11,7 +11,7 @@ func TestAccDeploymentTargetResource(t *testing.T) {
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
-			// Create and Read DeploymentTarget Resource
+			// Create and Read DeploymentTargetResourceModel Resource
 			{
 				Config: testAccDeploymentTargetResourceConfig("test", "default"),
 				Check: resource.ComposeTestCheckFunc(resource.TestCheckResourceAttr("flink_appmanager_deployment_target.test", "name", "test"),
@@ -27,13 +27,13 @@ func TestAccDeploymentTargetResource(t *testing.T) {
 func testAccDeploymentTargetResourceConfig(name string, k8snamespace string) string {
 	return fmt.Sprintf(`
 resource "flink_appmanager_namespace" "test" {
- provider = flink-appmanager
+ provider = fam
 
  name =  "test"
 }
 
 resource "flink_appmanager_deployment_target" "test" {
-provider = flink-appmanager
+provider = fam
 depends_on = [
  flink_appmanager_namespace.test
 ]

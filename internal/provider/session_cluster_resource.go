@@ -2,25 +2,34 @@ package provider
 
 import (
 	"context"
+	"fmt"
 	"git.sofunny.io/data-analysis-public/flink-appmanager-sdk/go/pkg/client"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
-	"github.com/hashicorp/terraform-plugin-framework/provider"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"math/big"
 )
 
-var _ provider.ResourceType = sessionClusterResourceType{}
-var _ resource.Resource = sessionClusterResource{}
-var _ resource.ResourceWithImportState = sessionClusterResource{}
+var _ resource.Resource = &SessionClusterResource{}
+var _ resource.ResourceWithImportState = &SessionClusterResource{}
 
-type sessionClusterResourceType struct {
+func NewSessionClusterResource() resource.Resource {
+	return &SessionClusterResource{}
 }
 
-func (r sessionClusterResourceType) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostics) {
+// SessionClusterResource defines the resource implementation.
+type SessionClusterResource struct {
+	client *client.Client
+}
+
+func (r *SessionClusterResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
+	resp.TypeName = req.ProviderTypeName + "_session_cluster"
+}
+
+func (r *SessionClusterResource) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostics) {
 	return tfsdk.Schema{
 		Attributes: map[string]tfsdk.Attribute{
 			"id": {
@@ -66,31 +75,32 @@ func (r sessionClusterResourceType) GetSchema(_ context.Context) (tfsdk.Schema, 
 	}, nil
 }
 
-func (r sessionClusterResourceType) NewResource(_ context.Context, in provider.Provider) (resource.Resource, diag.Diagnostics) {
-	p, diags := convertProviderType(in)
-	return sessionClusterResource{
-		provider: p,
-	}, diags
-}
+func (r *SessionClusterResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
+	// Prevent panic if the provider has not been configured.
+	if req.ProviderData == nil {
+		return
+	}
+	c, ok := req.ProviderData.(*client.Client)
 
-type sessionClusterResource struct {
-	provider appManagerProvider
-}
-
-// Create 创建运行集群
-func (r sessionClusterResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
-	if !r.provider.configured {
+	if !ok {
 		resp.Diagnostics.AddError(
-			"Provider not configured",
-			"The provider hasn't been configured before apply, likely because it depends on an unknown value from another resource. This leads to weird stuff happening, so we'd prefer if you didn't do that. Thanks!",
+			"Unexpected Resource Configure Type",
+			fmt.Sprintf("Expected *http.Client, got: %T. Please report this issue to the provider developers.", req.ProviderData),
 		)
+
 		return
 	}
 
+	r.client = c
+}
+
+// Create 创建运行集群
+func (r *SessionClusterResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	// 读取配置
-	var plan SessionCluster
-	diags := req.Config.Get(ctx, &plan)
-	resp.Diagnostics.Append(diags...)
+	var plan SessionClusterResourceModel
+
+	// Read Terraform plan data into the model
+	resp.Diagnostics.Append(req.Config.Get(ctx, &plan)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -104,25 +114,23 @@ func (r sessionClusterResource) Create(ctx context.Context, req resource.CreateR
 	// 根据SessionCluster集群信息构建tf值
 	var result = buildSessionClusterTfValue(sc)
 	// 写出集群状态
-	diags = resp.State.Set(ctx, result)
-	resp.Diagnostics.Append(diags...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
+	// Save data into Terraform state
+	resp.Diagnostics.Append(resp.State.Set(ctx, result)...)
 }
 
 // Read 读取集群信息
-func (r sessionClusterResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
+func (r *SessionClusterResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
 	// 获取状态参数
-	var state SessionCluster
-	diags := req.State.Get(ctx, &state)
-	resp.Diagnostics.Append(diags...)
+	var state SessionClusterResourceModel
+
+	// Read Terraform prior state data into the model
+	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
 	// 查询SessionCluster集群信息
-	sessionCluster, _, err := r.provider.client.GetSessionCluster(state.Name.Value, state.Namespace.Value)
+	sessionCluster, _, err := r.client.GetSessionCluster(state.Name.Value, state.Namespace.Value)
 	if err != nil {
 		resp.Diagnostics.AddError("Error reading sessionCluster", "Could not read sessionCluster, unexpected error:: "+err.Error())
 		return
@@ -132,19 +140,17 @@ func (r sessionClusterResource) Read(ctx context.Context, req resource.ReadReque
 	var result = buildSessionClusterTfValue(sessionCluster)
 
 	// 写出集群状态
-	diags = resp.State.Set(ctx, result)
-	resp.Diagnostics.Append(diags...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
+	// Save updated data into Terraform state
+	resp.Diagnostics.Append(resp.State.Set(ctx, result)...)
 }
 
 // Update 更新集群
-func (r sessionClusterResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
+func (r *SessionClusterResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
 	// 获取状态参数
-	var state SessionCluster
-	diags := req.State.Get(ctx, &state)
-	resp.Diagnostics.Append(diags...)
+	var state SessionClusterResourceModel
+
+	// Read Terraform plan data into the model
+	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -157,7 +163,7 @@ func (r sessionClusterResource) Update(ctx context.Context, req resource.UpdateR
 	}
 
 	// 读取配置
-	var plan SessionCluster
+	var plan SessionClusterResourceModel
 	planDiags := req.Config.Get(ctx, &plan)
 	resp.Diagnostics.Append(planDiags...)
 	if resp.Diagnostics.HasError() {
@@ -173,19 +179,16 @@ func (r sessionClusterResource) Update(ctx context.Context, req resource.UpdateR
 	// 根据SessionCluster集群信息构建tf值
 	var result = buildSessionClusterTfValue(sc)
 	// 写出集群状态
-	diags = resp.State.Set(ctx, result)
-	resp.Diagnostics.Append(diags...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
+	// Save updated data into Terraform state
+	resp.Diagnostics.Append(resp.State.Set(ctx, result)...)
 }
 
 // Delete 删除集群
-func (r sessionClusterResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
-	var state SessionCluster
-	diags := req.State.Get(ctx, &state)
-	resp.Diagnostics.Append(diags...)
+func (r *SessionClusterResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
+	var state SessionClusterResourceModel
+
+	// Read Terraform prior state data into the model
+	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -199,7 +202,7 @@ func (r sessionClusterResource) Delete(ctx context.Context, req resource.DeleteR
 	}
 
 	// 删除集群名称
-	_, _, err = r.provider.client.DeleteSessionCluster(sessionClusterName, state.Namespace.Value)
+	_, _, err = r.client.DeleteSessionCluster(sessionClusterName, state.Namespace.Value)
 
 	if err != nil {
 		resp.Diagnostics.AddError("Error delete sessionCluster", "Could not delete sessionCluster, unexpected error: "+err.Error())
@@ -208,12 +211,12 @@ func (r sessionClusterResource) Delete(ctx context.Context, req resource.DeleteR
 }
 
 // ImportState 导入状态
-func (r sessionClusterResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
+func (r *SessionClusterResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
 	resource.ImportStatePassthroughID(ctx, path.Root("name"), req, resp)
 }
 
 // 将sessionCluster值转换成tf值
-func buildSessionClusterTfValue(sc *client.SessionCluster) *SessionCluster {
+func buildSessionClusterTfValue(sc *client.SessionCluster) *SessionClusterResourceModel {
 	resources := make(map[string]*ResourceSpec)
 	for k, v := range sc.Spec.Resources {
 		resources[k] = &ResourceSpec{
@@ -222,7 +225,7 @@ func buildSessionClusterTfValue(sc *client.SessionCluster) *SessionCluster {
 		}
 	}
 
-	return &SessionCluster{
+	return &SessionClusterResourceModel{
 		ID:                   types.String{Value: sc.Metadata.Id},
 		Namespace:            types.String{Value: sc.Metadata.Namespace},
 		Name:                 types.String{Value: sc.Metadata.Name},
@@ -236,7 +239,7 @@ func buildSessionClusterTfValue(sc *client.SessionCluster) *SessionCluster {
 }
 
 // 将tf值转换成sessionCluster请求参数
-func buildSessionClusterDTO(sc *SessionCluster) *client.SessionCluster {
+func buildSessionClusterDTO(sc *SessionClusterResourceModel) *client.SessionCluster {
 	resources := make(map[string]*client.ResourceSpec)
 	for k, v := range sc.Resources {
 		cpu, _ := v.Cpu.Value.Float64()
@@ -260,19 +263,19 @@ func buildSessionClusterDTO(sc *SessionCluster) *client.SessionCluster {
 }
 
 // StopSessionCluster 停止SessionCluster
-func (r sessionClusterResource) StopSessionCluster(namespace string, sessionClusterName string) (*client.SessionCluster, error) {
+func (r *SessionClusterResource) StopSessionCluster(namespace string, sessionClusterName string) (*client.SessionCluster, error) {
 	// 停止SessionCluster
 	sc := &client.SessionCluster{
 		Metadata: &client.SessionClusterMetadata{Name: sessionClusterName, Namespace: namespace},
 		Spec:     &client.SessionClusterSpec{State: client.ClusterStopped},
 	}
-	_, _, err := r.provider.client.UpdateSessionCluster(sc, namespace)
+	_, _, err := r.client.UpdateSessionCluster(sc, namespace)
 	if err != nil {
 		return nil, err
 	}
 
 	// 等待SessionCluster停止
-	sc, _, err = r.provider.client.WaitSessionClusterStateChange(sessionClusterName, client.ClusterStopped, namespace)
+	sc, _, err = r.client.WaitSessionClusterStateChange(sessionClusterName, client.ClusterStopped, namespace)
 	if err != nil {
 		return nil, err
 	}
@@ -281,19 +284,19 @@ func (r sessionClusterResource) StopSessionCluster(namespace string, sessionClus
 }
 
 // RunSessionCluster 创建出运行的SessionCluster
-func (r sessionClusterResource) RunSessionCluster(namespace string, scCfg *client.SessionCluster) (*client.SessionCluster, error) {
+func (r *SessionClusterResource) RunSessionCluster(namespace string, scCfg *client.SessionCluster) (*client.SessionCluster, error) {
 	// 写死使用默认日志配置
 	scCfg.Spec.Logging = &client.Logging{Log4jLoggers: map[string]string{"": "INFO"}, LoggingProfile: "default"}
 	// 强制启动
 	scCfg.Spec.State = client.ClusterRunning
 
-	_, _, err := r.provider.client.CreateOrReplaceSessionCluster(scCfg, namespace)
+	_, _, err := r.client.CreateOrReplaceSessionCluster(scCfg, namespace)
 	if err != nil {
 		return nil, err
 	}
 
 	// 等待集群创建
-	state, _, err := r.provider.client.WaitSessionClusterStateChange(scCfg.Metadata.Name, client.ClusterRunning, namespace)
+	state, _, err := r.client.WaitSessionClusterStateChange(scCfg.Metadata.Name, client.ClusterRunning, namespace)
 	if err != nil {
 		return nil, err
 	}

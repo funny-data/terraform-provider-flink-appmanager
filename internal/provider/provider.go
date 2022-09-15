@@ -2,10 +2,11 @@ package provider
 
 import (
 	"context"
-	"fmt"
 	"git.sofunny.io/data-analysis-public/flink-appmanager-sdk/go/pkg/client"
+	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/provider"
+	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"os"
@@ -17,25 +18,37 @@ const (
 	DefaultWaitTimeout  = 180
 )
 
-var _ provider.Provider = &appManagerProvider{}
+// Ensure FlinkAppManagerProvider satisfies various provider interfaces.
+var _ provider.Provider = &FlinkAppManagerProvider{}
+var _ provider.ProviderWithMetadata = &FlinkAppManagerProvider{}
 
-type appManagerProvider struct {
-	configured bool
-	client     *client.Client
+// FlinkAppManagerProvider defines the provider implementation.
+type FlinkAppManagerProvider struct {
+	// version is set to the provider version on release, "dev" when the
+	// provider is built and ran locally, and "test" when running acceptance
+	// testing.
+	version string
 }
 
-func New() func() provider.Provider {
-	return func() provider.Provider {
-		return &appManagerProvider{}
-	}
+// FlinkAppManagerProviderModel describes the provider data model.
+type FlinkAppManagerProviderModel struct {
+	Endpoint     types.String `tfsdk:"endpoint"`
+	WaitTimeout  types.Int64  `tfsdk:"wait_timeout"`
+	WaitInterval types.Int64  `tfsdk:"wait_interval"`
 }
 
-func (p *appManagerProvider) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostics) {
+func (p *FlinkAppManagerProvider) Metadata(_ context.Context, _ provider.MetadataRequest, resp *provider.MetadataResponse) {
+	resp.TypeName = "flink_appmanager"
+	resp.Version = p.version
+}
+
+func (p *FlinkAppManagerProvider) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostics) {
 	return tfsdk.Schema{
 		Attributes: map[string]tfsdk.Attribute{
 			"endpoint": {
-				Type:     types.StringType,
-				Optional: true,
+				MarkdownDescription: "Flink AppManager Endpoint",
+				Type:                types.StringType,
+				Optional:            true,
 			},
 			"wait_timeout": {
 				Type:     types.Int64Type,
@@ -49,16 +62,11 @@ func (p *appManagerProvider) GetSchema(_ context.Context) (tfsdk.Schema, diag.Di
 	}, nil
 }
 
-type providerData struct {
-	Endpoint     types.String `tfsdk:"endpoint"`
-	WaitTimeout  types.Int64  `tfsdk:"wait_timeout"`
-	WaitInterval types.Int64  `tfsdk:"wait_interval"`
-}
+func (p *FlinkAppManagerProvider) Configure(ctx context.Context, req provider.ConfigureRequest, resp *provider.ConfigureResponse) {
+	var config FlinkAppManagerProviderModel
 
-func (p *appManagerProvider) Configure(ctx context.Context, req provider.ConfigureRequest, resp *provider.ConfigureResponse) {
-	var config providerData
-	diags := req.Config.Get(ctx, &config)
-	resp.Diagnostics.Append(diags...)
+	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
+
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -91,46 +99,32 @@ func (p *appManagerProvider) Configure(ctx context.Context, req provider.Configu
 		waitTimeout = DefaultWaitTimeout
 	}
 
-	p.client = client.SetUp(client.Config{
+	c := client.SetUp(client.Config{
 		Endpoint: endpoint,
 		Interval: time.Duration(waitInterval) * time.Second,
 		Timeout:  time.Duration(waitTimeout) * time.Second,
 	})
-	p.configured = true
+
+	resp.DataSourceData = c
+	resp.ResourceData = c
 }
 
-func (p *appManagerProvider) GetResources(_ context.Context) (map[string]provider.ResourceType, diag.Diagnostics) {
-	return map[string]provider.ResourceType{
-		"flink_appmanager_namespace":         namespaceResourceType{},
-		"flink_appmanager_deployment_target": deploymentTargetResourceType{},
-		"flink_appmanager_session_cluster":   sessionClusterResourceType{},
-	}, nil
-}
-
-func (p *appManagerProvider) GetDataSources(_ context.Context) (map[string]provider.DataSourceType, diag.Diagnostics) {
-	return map[string]provider.DataSourceType{}, nil
-}
-
-func convertProviderType(in provider.Provider) (appManagerProvider, diag.Diagnostics) {
-	var diags diag.Diagnostics
-
-	p, ok := in.(*appManagerProvider)
-
-	if !ok {
-		diags.AddError(
-			"Unexpected Provider Instance Type",
-			fmt.Sprintf("While creating the data source or resource, an unexpected provider type (%T) was received. This is always a bug in the provider code and should be reported to the provider developers.", p),
-		)
-		return appManagerProvider{}, diags
+func (p *FlinkAppManagerProvider) Resources(_ context.Context) []func() resource.Resource {
+	return []func() resource.Resource{
+		NewDeploymentTargetResource,
+		NewNamespaceResource,
+		NewSessionClusterResource,
 	}
+}
 
-	if p == nil {
-		diags.AddError(
-			"Unexpected Provider Instance Type",
-			"While creating the data source or resource, an unexpected empty provider instance was received. This is always a bug in the provider code and should be reported to the provider developers.",
-		)
-		return appManagerProvider{}, diags
+func (p *FlinkAppManagerProvider) DataSources(_ context.Context) []func() datasource.DataSource {
+	return []func() datasource.DataSource{}
+}
+
+func New(version string) func() provider.Provider {
+	return func() provider.Provider {
+		return &FlinkAppManagerProvider{
+			version: version,
+		}
 	}
-
-	return *p, diags
 }

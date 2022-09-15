@@ -27,7 +27,7 @@ func TestAccNamespaceResource(t *testing.T) {
 func testAccNamespaceResourceConfig(name string) string {
 	return fmt.Sprintf(`
 resource "flink_appmanager_namespace" "test" {
- provider = flink-appmanager
+ provider = fam
  name =  %[1]q
 }
 `, name)

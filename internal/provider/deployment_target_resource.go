@@ -2,27 +2,36 @@ package provider
 
 import (
 	"context"
+	"fmt"
 	"git.sofunny.io/data-analysis-public/flink-appmanager-sdk/go/pkg/client"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
-	"github.com/hashicorp/terraform-plugin-framework/provider"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-var _ provider.ResourceType = deploymentTargetResourceType{}
-var _ resource.Resource = deploymentTargetResource{}
-var _ resource.ResourceWithImportState = deploymentTargetResource{}
+var _ resource.Resource = &DeploymentTargetResource{}
+var _ resource.ResourceWithImportState = &DeploymentTargetResource{}
 
 const (
 	DefaultK8SNamespace = "default"
 )
 
-type deploymentTargetResourceType struct {
+func NewDeploymentTargetResource() resource.Resource {
+	return &DeploymentTargetResource{}
 }
 
-func (r deploymentTargetResourceType) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostics) {
+// DeploymentTargetResource defines the resource implementation.
+type DeploymentTargetResource struct {
+	client *client.Client
+}
+
+func (r *DeploymentTargetResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
+	resp.TypeName = req.ProviderTypeName + "_deployment_target"
+}
+
+func (r *DeploymentTargetResource) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostics) {
 	return tfsdk.Schema{
 		Attributes: map[string]tfsdk.Attribute{
 			"id": {
@@ -49,31 +58,32 @@ func (r deploymentTargetResourceType) GetSchema(_ context.Context) (tfsdk.Schema
 	}, nil
 }
 
-func (r deploymentTargetResourceType) NewResource(_ context.Context, in provider.Provider) (resource.Resource, diag.Diagnostics) {
-	p, diags := convertProviderType(in)
-	return deploymentTargetResource{
-		provider: p,
-	}, diags
-}
+func (r *DeploymentTargetResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
+	// Prevent panic if the provider has not been configured.
+	if req.ProviderData == nil {
+		return
+	}
+	c, ok := req.ProviderData.(*client.Client)
 
-type deploymentTargetResource struct {
-	provider appManagerProvider
-}
-
-// Create 创建部署目标
-func (r deploymentTargetResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
-	if !r.provider.configured {
+	if !ok {
 		resp.Diagnostics.AddError(
-			"Provider not configured",
-			"The provider hasn't been configured before apply, likely because it depends on an unknown value from another resource. This leads to weird stuff happening, so we'd prefer if you didn't do that. Thanks!",
+			"Unexpected Resource Configure Type",
+			fmt.Sprintf("Expected *http.Client, got: %T. Please report this issue to the provider developers.", req.ProviderData),
 		)
+
 		return
 	}
 
+	r.client = c
+}
+
+// Create 创建部署目标
+func (r *DeploymentTargetResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	// 获取配置参数
-	var plan DeploymentTarget
-	diags := req.Config.Get(ctx, &plan)
-	resp.Diagnostics.Append(diags...)
+	var plan DeploymentTargetResourceModel
+
+	// Read Terraform plan data into the model
+	resp.Diagnostics.Append(req.Config.Get(ctx, &plan)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -90,13 +100,13 @@ func (r deploymentTargetResource) Create(ctx context.Context, req resource.Creat
 			Namespace: k8sNamespace,
 		}},
 	}
-	deploymentTarget, _, err := r.provider.client.CreateDeploymentTarget(dt, plan.Namespace.Value)
+	deploymentTarget, _, err := r.client.CreateDeploymentTarget(dt, plan.Namespace.Value)
 	if err != nil {
 		resp.Diagnostics.AddError("Error create deploymentTarget", "Could not create deploymentTarget, unexpected error: "+err.Error())
 		return
 	}
 
-	var result = DeploymentTarget{
+	var result = DeploymentTargetResourceModel{
 		ID:           types.String{Value: deploymentTarget.Metadata.ID},
 		Namespace:    types.String{Value: deploymentTarget.Metadata.Namespace},
 		Name:         types.String{Value: deploymentTarget.Metadata.Name},
@@ -104,30 +114,28 @@ func (r deploymentTargetResource) Create(ctx context.Context, req resource.Creat
 	}
 
 	// 保存状态
-	diags = resp.State.Set(ctx, result)
-	resp.Diagnostics.Append(diags...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
+	// Save data into Terraform state
+	resp.Diagnostics.Append(resp.State.Set(ctx, result)...)
 }
 
 // Read 读取部署目标
-func (r deploymentTargetResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
+func (r *DeploymentTargetResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
 	// 获取状态参数
-	var state DeploymentTarget
-	diags := req.State.Get(ctx, &state)
-	resp.Diagnostics.Append(diags...)
+	var state DeploymentTargetResourceModel
+
+	// Read Terraform prior state data into the model
+	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	deploymentTarget, _, err := r.provider.client.GetDeploymentTarget(state.Name.Value, state.Namespace.Value)
+	deploymentTarget, _, err := r.client.GetDeploymentTarget(state.Name.Value, state.Namespace.Value)
 	if err != nil {
 		resp.Diagnostics.AddError("Error reading deploymentTarget", "Could not read deploymentTarget: "+err.Error())
 		return
 	}
 
-	var result = DeploymentTarget{
+	var result = DeploymentTargetResourceModel{
 		ID:           types.String{Value: deploymentTarget.Metadata.ID},
 		Name:         types.String{Value: deploymentTarget.Metadata.Name},
 		Namespace:    types.String{Value: deploymentTarget.Metadata.Namespace},
@@ -135,29 +143,27 @@ func (r deploymentTargetResource) Read(ctx context.Context, req resource.ReadReq
 	}
 
 	// 部署目标写入状态
-	diags = resp.State.Set(ctx, result)
-	resp.Diagnostics.Append(diags...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
+	// Save updated data into Terraform state
+	resp.Diagnostics.Append(resp.State.Set(ctx, result)...)
 }
 
-func (r deploymentTargetResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
+func (r *DeploymentTargetResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
 
 }
 
 // Delete 删除部署目标
-func (r deploymentTargetResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
+func (r *DeploymentTargetResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
 	// 获取状态参数
-	var state DeploymentTarget
-	diags := req.State.Get(ctx, &state)
-	resp.Diagnostics.Append(diags...)
+	var state DeploymentTargetResourceModel
+
+	// Read Terraform prior state data into the model
+	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
 	// 删除部署目标
-	_, _, err := r.provider.client.DeleteDeploymentTarget(state.Name.Value, state.Namespace.Value)
+	_, _, err := r.client.DeleteDeploymentTarget(state.Name.Value, state.Namespace.Value)
 	if err != nil {
 		resp.Diagnostics.AddError("Error delete deploymentTarget", "Could not deleted deploymentTarget, unexpected error: "+err.Error())
 		return
@@ -165,6 +171,6 @@ func (r deploymentTargetResource) Delete(ctx context.Context, req resource.Delet
 }
 
 // ImportState 导入状态
-func (r deploymentTargetResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
+func (r *DeploymentTargetResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
 	resource.ImportStatePassthroughID(ctx, path.Root("name"), req, resp)
 }

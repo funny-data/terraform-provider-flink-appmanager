@@ -2,8 +2,8 @@ package provider
 
 import "github.com/hashicorp/terraform-plugin-framework/types"
 
-// SessionCluster SessionCluster Model
-type SessionCluster struct {
+// SessionClusterResourceModel SessionClusterResourceModel Model
+type SessionClusterResourceModel struct {
 	ID                   types.String             `tfsdk:"id"`
 	Namespace            types.String             `tfsdk:"namespace"`
 	Name                 types.String             `tfsdk:"name"`
@@ -21,16 +21,16 @@ type ResourceSpec struct {
 	Memory types.String `tfsdk:"memory"`
 }
 
-// DeploymentTarget 部署目标Model
-type DeploymentTarget struct {
+// DeploymentTargetResourceModel 部署目标Model
+type DeploymentTargetResourceModel struct {
 	ID           types.String `tfsdk:"id"`
 	Namespace    types.String `tfsdk:"namespace"`
 	Name         types.String `tfsdk:"name"`
 	K8SNamespace types.String `tfsdk:"k8s_namespace"`
 }
 
-// Namespace 部署空间Model
-type Namespace struct {
+// NamespaceResourceModel 部署空间Model
+type NamespaceResourceModel struct {
 	ID    types.String `tfsdk:"id"`
 	Name  types.String `tfsdk:"name"`
 	State types.String `tfsdk:"state"`
