@@ -9,6 +9,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"strings"
 )
 
 var _ resource.Resource = &DeploymentTargetResource{}
@@ -172,5 +173,16 @@ func (r *DeploymentTargetResource) Delete(ctx context.Context, req resource.Dele
 
 // ImportState 导入状态
 func (r *DeploymentTargetResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
-	resource.ImportStatePassthroughID(ctx, path.Root("name"), req, resp)
+	idParts := strings.Split(req.ID, ",")
+
+	if len(idParts) != 2 || idParts[0] == "" || idParts[1] == "" {
+		resp.Diagnostics.AddError(
+			"Unexpected Import Identifier",
+			fmt.Sprintf("Expected import identifier with format: namespace,deploymentTargetName. Got: %q", req.ID),
+		)
+		return
+	}
+
+	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("namespace"), idParts[0])...)
+	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("name"), idParts[1])...)
 }
