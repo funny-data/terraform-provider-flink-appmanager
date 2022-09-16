@@ -1,0 +1,5 @@
+/build/*
+/dist
+.idea/
+__debug_*
+cover*.*

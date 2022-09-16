@@ -1,0 +1,6 @@
+*debug*
+*.exe
+*.prof
+*.test
+cover*.out
+/build/*
