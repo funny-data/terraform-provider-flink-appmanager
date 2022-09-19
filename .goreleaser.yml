@@ -29,11 +29,6 @@ builds:
   overrides:
     - goos: darwin
       goarch: amd64
-      goamd64: v1
-      env:
-        - CGO_ENABLED=1
-    - goos: darwin
-      goarch: arm64
       env:
         - CGO_ENABLED=1
 
