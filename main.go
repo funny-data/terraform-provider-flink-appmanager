@@ -3,10 +3,9 @@ package main
 import (
 	"context"
 	"flag"
-	"log"
-
 	"github.com/funny-data/terraform-provider-flink-appmanager/internal/provider"
 	"github.com/hashicorp/terraform-plugin-framework/providerserver"
+	"log"
 )
 
 // Run "go generate" to format example terraform files and generate the docs for the registry/website

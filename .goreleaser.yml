@@ -26,12 +26,6 @@ builds:
     - goos: darwin
       goarch: '386'
   binary: '{{ .ProjectName }}_v{{ .Version }}'
-  overrides:
-    - goos: darwin
-      goarch: amd64
-      env:
-        - CGO_ENABLED=1
-
 archives:
 - format: zip
   name_template: '{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}'
