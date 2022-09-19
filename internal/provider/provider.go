@@ -2,6 +2,7 @@ package provider
 
 import (
 	"context"
+	"fmt"
 	"git.sofunny.io/data-analysis-public/flink-appmanager-sdk/go/pkg/client"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
@@ -104,6 +105,13 @@ func (p *FlinkAppManagerProvider) Configure(ctx context.Context, req provider.Co
 		Interval: time.Duration(waitInterval) * time.Second,
 		Timeout:  time.Duration(waitTimeout) * time.Second,
 	})
+
+	_, _, err := c.GetSystemInfo()
+
+	if err != nil {
+		resp.Diagnostics.AddError("FlinkAppManager endpoint unable to provide service", fmt.Sprintf("FlinkAppManager endpoint: [%s] unable to provide service, err=%s", endpoint, err))
+		return
+	}
 
 	resp.DataSourceData = c
 	resp.ResourceData = c
