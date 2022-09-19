@@ -3,7 +3,7 @@ module github.com/funny-data/terraform-provider-flink-appmanager
 go 1.18
 
 require (
-	git.sofunny.io/data-analysis-public/flink-appmanager-sdk/go v0.0.0-20220913075641-5a263160370c
+	git.sofunny.io/data-analysis-public/flink-appmanager-sdk/go v0.0.0-20220919073900-40b1ae061bf4
 	github.com/hashicorp/terraform-plugin-docs v0.13.0
 	github.com/hashicorp/terraform-plugin-framework v0.12.0
 	github.com/hashicorp/terraform-plugin-go v0.14.0

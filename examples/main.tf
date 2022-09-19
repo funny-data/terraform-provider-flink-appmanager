@@ -7,7 +7,7 @@ terraform {
 }
 
 provider "fam" {
-  endpoint     = "http://flink-appmanager.turbine-production-sausage-lan.sofunny.io/"
+  endpoint     = "http://flink-appmanager"
   wait_timeout = 180
 }
 

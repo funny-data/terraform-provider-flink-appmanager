@@ -1,4 +1,4 @@
-# git.sofunny.io/data-analysis-public/flink-appmanager-sdk/go v0.0.0-20220913075641-5a263160370c
+# git.sofunny.io/data-analysis-public/flink-appmanager-sdk/go v0.0.0-20220919073900-40b1ae061bf4
 ## explicit; go 1.18
 git.sofunny.io/data-analysis-public/flink-appmanager-sdk/go/pkg/client
 # github.com/Masterminds/goutils v1.1.1

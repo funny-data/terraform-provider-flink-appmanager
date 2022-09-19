@@ -13,7 +13,7 @@
 provider_installation {
 
   dev_overrides {
-      "registry.terraform.io/funny-data/flink-appmanager"" = "/Users/<user>/go/bin"
+      "registry.terraform.io/funny-data/flink-appmanager" = "/Users/<user>/go/bin"
   }
 
   # For all other providers, install them directly from their origin provider

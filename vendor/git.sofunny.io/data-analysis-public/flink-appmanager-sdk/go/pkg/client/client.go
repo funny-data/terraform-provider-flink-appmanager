@@ -2,6 +2,7 @@ package client
 
 import (
 	"context"
+	"crypto/tls"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -33,6 +34,9 @@ type Config struct {
 	Endpoint string `yaml:"endpoint,omitempty"`
 	Version  string `yaml:"version,omitempty"`
 
+	// 忽略证书验证
+	InsecureSkipVerify bool `yaml:"insecure_skip_verify,omitempty"`
+
 	// wait config
 	Interval time.Duration `yaml:"interval,omitempty"`
 	Timeout  time.Duration `yaml:"timeout,omitempty"`
@@ -41,6 +45,7 @@ type Config struct {
 var (
 	baseUrl               string
 	uiConfigUrl           string
+	systemInfoUrl         string
 	namespaceUrl          func(string) string
 	deploymentTargetUrl   func(string) string
 	sessionClusterUrl     func(string) string
@@ -58,6 +63,7 @@ func SetUp(config Config) *Client {
 
 	baseUrl = fmt.Sprintf("%s/api/%s", config.Endpoint, config.Version)
 	uiConfigUrl = fmt.Sprintf("%s/ui/config.json", config.Endpoint)
+	systemInfoUrl = fmt.Sprintf("%s/ui/appmanager/status/system-info", config.Endpoint)
 	namespaceUrl = func(namespace string) string {
 		return fmt.Sprintf("%s/%s/%s", baseUrl, NamespaceUri, namespace)
 	}
@@ -84,8 +90,14 @@ func SetUp(config Config) *Client {
 	}
 
 	return &Client{
-		HttpClient: &http.Client{},
-		Cfg:        config,
+		HttpClient: &http.Client{
+			Transport: &http.Transport{
+				TLSClientConfig: &tls.Config{
+					InsecureSkipVerify: config.InsecureSkipVerify,
+				},
+			},
+		},
+		Cfg: config,
 	}
 }
 
@@ -127,6 +139,10 @@ func (c *Client) do(method, url string, body io.Reader, v interface{}) (int, err
 	req.Header.Set("Content-Type", "application/json")
 	res, err := c.HttpClient.Do(req)
 	if err != nil {
+		// endpoint 错误时不会返回状态码
+		if res == nil {
+			return 0, err
+		}
 		return res.StatusCode, err
 	}
 
