@@ -1,9 +1,5 @@
 cloud.google.com/go v0.26.0/go.mod h1:aQUYkXzVsufM+DwF1aE+0xfcU+56JwCaLick0ClmMTw=
 cloud.google.com/go v0.34.0/go.mod h1:aQUYkXzVsufM+DwF1aE+0xfcU+56JwCaLick0ClmMTw=
-git.sofunny.io/data-analysis-public/flink-appmanager-sdk/go v0.0.0-20220913075641-5a263160370c h1:LMI16XF7bPgfWij/5QRInClizpBiV0x9vU7BFYsq0Gg=
-git.sofunny.io/data-analysis-public/flink-appmanager-sdk/go v0.0.0-20220913075641-5a263160370c/go.mod h1:vAFWLK/LyCkQaJZNceFcYlv023Aqx5RHOYm7xWrcDt4=
-git.sofunny.io/data-analysis-public/flink-appmanager-sdk/go v0.0.0-20220919072754-e4c7069b8449 h1:9bzXNryKjxfdl1AAuZHUHQ4NUTfvx5e0Zpzxc2UPuVo=
-git.sofunny.io/data-analysis-public/flink-appmanager-sdk/go v0.0.0-20220919072754-e4c7069b8449/go.mod h1:vAFWLK/LyCkQaJZNceFcYlv023Aqx5RHOYm7xWrcDt4=
 git.sofunny.io/data-analysis-public/flink-appmanager-sdk/go v0.0.0-20220919073900-40b1ae061bf4 h1:5aRb7fzGLkCVF3VvN6JzV5i11yRzFPghTg5Cwi9m16U=
 git.sofunny.io/data-analysis-public/flink-appmanager-sdk/go v0.0.0-20220919073900-40b1ae061bf4/go.mod h1:vAFWLK/LyCkQaJZNceFcYlv023Aqx5RHOYm7xWrcDt4=
 github.com/BurntSushi/toml v0.3.1/go.mod h1:xHWCNGjB5oqiDr8zfno3MHue2Ht5sIBksp03qcyfWMU=
